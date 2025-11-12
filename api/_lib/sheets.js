@@ -1,10 +1,23 @@
 const { google } = require("googleapis");
 
+// --- helpers tanggal (dipakai banyak tempat) ---
+function jktToday() {
+  return new Date(
+    new Date().toLocaleString("en-US", { timeZone: "Asia/Jakarta" })
+  );
+}
+function dateJKTYYYYMMDD(d = jktToday()) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+// --- Google Sheets client: pakai env JSON langsung ---
 async function sheetsClient() {
   if (!process.env.GOOGLE_SERVICE_ACCOUNT_JSON) {
     throw new Error("GOOGLE_SERVICE_ACCOUNT_JSON is missing");
   }
-
   const credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON);
 
   const auth = new google.auth.GoogleAuth({
@@ -14,8 +27,6 @@ async function sheetsClient() {
 
   return google.sheets({ version: "v4", auth });
 }
-
-module.exports = { sheetsClient };
 
 
 const toNum = (v) => {
@@ -127,10 +138,14 @@ async function readAllSummaryAndExpenses(spreadsheetId) {
 }
 
 module.exports = {
+  jktToday,
   dateJKTYYYYMMDD,
+  sheetsClient,
+  // pastikan yang lain tetap diexport di sini:
   readTodayBatch,
   createSummaryRow,
   setIncome,
   appendExpense,
+  ensureSummaryFormulas,
   readAllSummaryAndExpenses
 };
