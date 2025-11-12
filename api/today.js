@@ -1,28 +1,43 @@
+// api/today.js
+const { readTodayBatch, createSummaryRow, dateJKTYYYYMMDD } = require("./_lib/sheets");
 const { requireAuth } = require("./_lib/jwt");
-const { dateJKTYYYYMMDD, readTodayBatch, createSummaryRow } = require("./_lib/sheets");
 
 module.exports = async (req, res) => {
-  if (!requireAuth(req, res)) return res.status(401).json({ message: "Unauthorized" });
+  // auth (cookie JWT)
+  const auth = await requireAuth(req, res);
+  if (!auth) return;
 
-  const dateStr = dateJKTYYYYMMDD();
-  const sid = process.env.SPREADSHEET_ID;
+  try {
+    const dateStr = dateJKTYYYYMMDD();
 
-  let { rowIndex, items, summaryIncome, summaryTotal, summaryReasons, cashStart, cashEnd } =
-    await readTodayBatch(sid, dateStr);
+    let { rowIndex, row, items, summaryIncome, summaryTotal, cashStart, cashEnd, toNum } =
+      await readTodayBatch(process.env.SPREADSHEET_ID, dateStr);
 
-  if (rowIndex === -1) {
-    await createSummaryRow(sid, dateStr);
-    ({ rowIndex, items, summaryIncome, summaryTotal, summaryReasons, cashStart, cashEnd } =
-      await readTodayBatch(sid, dateStr));
+    // kalau belum ada baris summary, buat lalu baca ulang sekali
+    if (rowIndex === -1) {
+      await createSummaryRow(process.env.SPREADSHEET_ID, dateStr);
+      ({ rowIndex, row, items, summaryIncome, summaryTotal, cashStart, cashEnd, toNum } =
+        await readTodayBatch(process.env.SPREADSHEET_ID, dateStr));
+    }
+
+    // incomeSet TRUE hanya kalau kolom B berisi angka valid (>0) atau string angka
+    const rawIncome = row?.[1];
+    const parsedIncome = toNum(rawIncome);
+    const incomeSet = rawIncome !== undefined && rawIncome !== "" && parsedIncome !== 0;
+
+    res.json({
+      date: dateStr,
+      income: incomeSet ? parsedIncome : null,  // null => form tampil
+      incomeSet,
+      totalExpense: toNum(summaryTotal),
+      cashStart: toNum(cashStart),
+      cashEnd: toNum(cashEnd),
+      expenses: (items || []).map(([d, n, r, ts]) => ({
+        amount: toNum(n), reason: r || "", ts: ts || ""
+      })),
+    });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: "server error" });
   }
-
-  res.status(200).json({
-    date: dateStr,
-    income: summaryIncome,
-    totalExpense: summaryTotal,
-    reasonSummary: summaryReasons,
-    cashStart, cashEnd,
-    incomeSet: summaryIncome != null,
-    expenses: items.map(([d, n, r, ts]) => ({ amount: Number(n), reason: r, ts }))
-  });
 };

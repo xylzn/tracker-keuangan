@@ -102,7 +102,7 @@ async function readAllSummaryAndExpenses(spreadsheetId) {
   const res = await sheets.spreadsheets.values.batchGet({
     spreadsheetId,
     ranges: [`${SHEET_SUMMARY}!A2:G`, `${SHEET_EXPENSES}!A2:D`],
-    valueRenderOption: "UNFORMATTED_VALUE"
+    valueRenderOption: "FORMATTED_VALUE"
   });
   const sum = res.data.valueRanges?.[0]?.values || [];
   const exp = res.data.valueRanges?.[1]?.values || [];
@@ -121,8 +121,9 @@ async function readAllSummaryAndExpenses(spreadsheetId) {
   }
 
   const dates = [...new Set([...sumMap.keys(), ...expMap.keys()])]
-    .filter(Boolean)
-    .sort((a,b)=> String(b).localeCompare(String(a)));
+  .filter(Boolean)
+  .map(String)
+  .sort((a,b) => b.localeCompare(a)); // DESC
 
   return { dates, sumMap, expMap };
 }
