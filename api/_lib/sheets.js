@@ -14,13 +14,11 @@ function dateJKTYYYYMMDD() {
 
 async function sheetsClient() {
   const creds = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON);
-  const auth = new google.auth.GoogleAuth({
-    scopes: SCOPES,
-    credentials: {
-      client_email: creds.client_email,
-      private_key: creds.private_key
-    }
-  });
+const auth = new google.auth.GoogleAuth({
+  credentials: JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON),
+  scopes: ["https://www.googleapis.com/auth/spreadsheets"]
+});
+
   return google.sheets({ version: "v4", auth });
 }
 
