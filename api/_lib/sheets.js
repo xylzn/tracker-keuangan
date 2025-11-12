@@ -12,12 +12,21 @@ function dateJKTYYYYMMDD() {
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
 }
 
+function loadServiceAccount() {
+  if (!process.env.GOOGLE_SERVICE_ACCOUNT_JSON) {
+    throw new Error("GOOGLE_SERVICE_ACCOUNT_JSON is missing");
+  }
+  return JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON);
+}
+
+
 async function sheetsClient() {
-  const creds = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON);
+const credentials = loadServiceAccount();
 const auth = new google.auth.GoogleAuth({
-  credentials: JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON),
-  scopes: ["https://www.googleapis.com/auth/spreadsheets"]
+  scopes: ["https://www.googleapis.com/auth/spreadsheets"],
+  credentials,
 });
+
 
   return google.sheets({ version: "v4", auth });
 }
@@ -29,6 +38,8 @@ const toNum = (v) => {
   const n = parseFloat(s);
   return Number.isFinite(n) ? n : 0;
 };
+
+
 
 /* ==== batched read for today ==== */
 async function readTodayBatch(spreadsheetId, dateStr) {
