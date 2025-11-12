@@ -146,6 +146,5 @@ module.exports = {
   createSummaryRow,
   setIncome,
   appendExpense,
-  ensureSummaryFormulas,
   readAllSummaryAndExpenses
 };
