@@ -1,5 +1,8 @@
 const { google } = require("googleapis");
 
+const SHEET_SUMMARY = "summary";
+const SHEET_EXPENSES = "expenses";
+
 // --- helpers tanggal (dipakai banyak tempat) ---
 function jktToday() {
   return new Date(
