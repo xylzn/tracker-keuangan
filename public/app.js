@@ -256,7 +256,7 @@ function App() {
   async function addIncome(e) {
     e.preventDefault();
     if (!incomeVal) return;
-    const r = await fetch("/api/today/income", {
+    const r = await fetch("/api/today-income", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -271,7 +271,7 @@ function App() {
   async function addExpense(e) {
     e.preventDefault();
     if (!expNom || !expReason) return toast.push("Lengkapi nominal & alasan", "err");
-    const r = await fetch("/api/today/expense", {
+    const r = await fetch("/api/today-expense", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
