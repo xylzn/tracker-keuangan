@@ -1,0 +1,38 @@
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+package-lock.json
+
+# Build / cache
+dist/
+build/
+.tmp/
+.temp/
+.cache/
+coverage/
+.next/
+.vercel/
+
+# OS / Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Env & kredensial
+.env
+.env.*
+!.env.example
+keys/
+*service-account*.json
+
+# Logs
+logs/
+*.log
+
+# File lokal opsional (contoh avatar lokal)
+public/assets/*.local.*
+public/assets/pfp.*

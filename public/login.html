@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Login • Keuangan</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/feather-icons@4.29.0/dist/feather.min.js"></script>
+  <style>
+    body{font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif}
+    .glass{backdrop-filter:blur(12px); background:linear-gradient(180deg,rgba(255,255,255,.7),rgba(255,255,255,.55))}
+    @media(prefers-color-scheme:dark){ .glass{background:linear-gradient(180deg,rgba(17,24,39,.7),rgba(17,24,39,.5))}}
+  </style>
+</head>
+<body class="min-h-screen bg-gradient-to-b from-indigo-800 via-slate-900 to-black relative">
+  <div class="absolute inset-0 bg-[radial-gradient(rgba(99,102,241,.2)_1px,transparent_1px)] bg-[length:22px_22px]"></div>
+
+  <div class="relative min-h-screen flex items-center justify-center p-6">
+    <form id="f" class="glass w-full max-w-md rounded-2xl border border-indigo-500/30 shadow-2xl shadow-indigo-900/30 p-6 sm:p-8 space-y-4">
+      <header class="mb-2 text-center">
+        <h1 class="text-2xl font-extrabold text-white">Masuk</h1>
+        <p class="text-indigo-200 text-sm">Akses sampai tengah malam WIB</p>
+      </header>
+
+      <div>
+        <label class="text-indigo-200 text-sm">Username</label>
+        <input name="username" class="mt-1 w-full rounded-xl border border-indigo-500/40 bg-black/20 text-white px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-400" placeholder="username" required/>
+      </div>
+
+      <div>
+        <label class="text-indigo-200 text-sm">Password</label>
+        <div class="mt-1 relative">
+          <input id="pwd" name="password" type="password"
+            class="w-full rounded-xl border border-indigo-500/40 bg-black/20 text-white px-4 py-2.5 pr-12 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+            placeholder="password" required />
+          <button type="button" id="toggle" class="absolute inset-y-0 right-0 px-3 text-indigo-300 hover:text-white">
+            <i data-feather="eye"></i>
+          </button>
+        </div>
+      </div>
+
+      <button class="w-full rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white py-2.5 font-semibold shadow-lg shadow-indigo-900/30">Login</button>
+
+      <p id="msg" class="text-center text-sm text-rose-300 hidden">Error</p>
+    </form>
+  </div>
+
+  <script>
+    feather.replace();
+    document.getElementById('toggle').addEventListener('click', ()=>{
+      const i = document.getElementById('pwd');
+      i.type = i.type === 'password' ? 'text' : 'password';
+    });
+    document.getElementById('f').addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      const body = { username: fd.get('username'), password: fd.get('password') };
+      const r = await fetch('/login', {
+        method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include', body: JSON.stringify(body)
+      });
+      if(!r.ok){
+        const j = await r.json().catch(()=>({message:"Login gagal"}));
+        const m = document.getElementById('msg');
+        m.textContent = j.message || 'Login gagal';
+        m.classList.remove('hidden');
+        return;
+      }
+      // sukses
+      location.href = '/';
+    });
+  </script>
+</body>
+</html>

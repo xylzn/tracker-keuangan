@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Keuangan Harian</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors:{ neo:"#0e1630" },
+          boxShadow:{ glass:"0 10px 30px -12px rgba(0,0,0,.35), 0 0 0 1px rgba(255,255,255,.08)"},
+          backgroundImage:{
+            aurora:"radial-gradient(1200px 600px at -10% -10%, rgba(168,85,247,.35), transparent 60%), radial-gradient(1200px 600px at 110% 10%, rgba(59,130,246,.35), transparent 60%), radial-gradient(1000px 600px at 50% 120%, rgba(16,185,129,.25), transparent 60%)",
+            grid:"radial-gradient(rgba(255,255,255,.12) 1px, transparent 1px)"
+          }
+        }
+      }
+    }
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/feather-icons@4.29.0/dist/feather.min.js"></script>
+  <style>
+    html,body{height:100%}
+    body{font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif}
+    .glass{backdrop-filter: blur(14px); background:rgba(255,255,255,.12)}
+  </style>
+</head>
+<body class="min-h-full bg-neo relative text-white">
+  <!-- bg -->
+  <div class="absolute inset-0 bg-aurora bg-aurora bg-[length:100%_100%]"></div>
+  <div class="absolute inset-0 bg-[length:22px_22px] bg-grid opacity-30"></div>
+
+  <div id="root" class="relative min-h-full"></div>
+
+
+<!-- React 18 UMD -->
+<script src="https://cdn.jsdelivr.net/npm/react@18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+
+<!-- Tambahkan Babel karena app.js berisi JSX -->
+<script src="https://cdn.jsdelivr.net/npm/@babel/standalone/babel.min.js"></script>
+
+<!-- UBAH: pakai type="text/babel" dan HAPUS defer -->
+<script type="text/babel" src="/app.js"></script>
+
+<script>window.addEventListener('load',()=>feather.replace())</script>
+
+</body>
+</html>
