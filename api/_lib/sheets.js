@@ -1,35 +1,22 @@
 const { google } = require("googleapis");
 
-const SCOPES = ["https://www.googleapis.com/auth/spreadsheets"];
-const SHEET_SUMMARY = "summary";
-const SHEET_EXPENSES = "expenses";
-
-function jktToday() {
-  return new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Jakarta" }));
-}
-function dateJKTYYYYMMDD() {
-  const d = jktToday();
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
-}
-
-function loadServiceAccount() {
+async function sheetsClient() {
   if (!process.env.GOOGLE_SERVICE_ACCOUNT_JSON) {
     throw new Error("GOOGLE_SERVICE_ACCOUNT_JSON is missing");
   }
-  return JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON);
-}
 
+  const credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON);
 
-async function sheetsClient() {
-const credentials = loadServiceAccount();
-const auth = new google.auth.GoogleAuth({
-  scopes: ["https://www.googleapis.com/auth/spreadsheets"],
-  credentials,
-});
-
+  const auth = new google.auth.GoogleAuth({
+    scopes: ["https://www.googleapis.com/auth/spreadsheets"],
+    credentials,
+  });
 
   return google.sheets({ version: "v4", auth });
 }
+
+module.exports = { sheetsClient };
+
 
 const toNum = (v) => {
   if (typeof v === "number") return v;
