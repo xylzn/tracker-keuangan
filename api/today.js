@@ -1,29 +1,28 @@
 // api/today.js
-const { readTodayBatch, createSummaryRow, dateJKTYYYYMMDD } = require("./_lib/sheets");
+const { readTodayBatch, createSummaryRow, dateJKTYYYYMMDD, toNum } = require("./_lib/sheets");
 const { requireAuth } = require("./_lib/jwt");
 
 module.exports = async (req, res) => {
   // auth (cookie JWT)
   const auth = await requireAuth(req, res);
-  if (!auth) return;
+  if (!auth) return res.status(401).json({ message: "Unauthorized" });
 
   try {
     const dateStr = dateJKTYYYYMMDD();
 
-    let { rowIndex, row, items, summaryIncome, summaryTotal, cashStart, cashEnd, toNum } =
+    let { rowIndex, items, summaryIncome, summaryTotal, cashStart, cashEnd } =
       await readTodayBatch(process.env.SPREADSHEET_ID, dateStr);
 
     // kalau belum ada baris summary, buat lalu baca ulang sekali
     if (rowIndex === -1) {
       await createSummaryRow(process.env.SPREADSHEET_ID, dateStr);
-      ({ rowIndex, row, items, summaryIncome, summaryTotal, cashStart, cashEnd, toNum } =
+      ({ rowIndex, items, summaryIncome, summaryTotal, cashStart, cashEnd } =
         await readTodayBatch(process.env.SPREADSHEET_ID, dateStr));
     }
 
-    // incomeSet TRUE hanya kalau kolom B berisi angka valid (>0) atau string angka
-    const rawIncome = row?.[1];
-    const parsedIncome = toNum(rawIncome);
-    const incomeSet = rawIncome !== undefined && rawIncome !== "" && parsedIncome !== 0;
+    // incomeSet TRUE hanya kalau summaryIncome ada dan bukan 0
+    const parsedIncome = toNum(summaryIncome);
+    const incomeSet = summaryIncome != null && parsedIncome !== 0;
 
     res.json({
       date: dateStr,

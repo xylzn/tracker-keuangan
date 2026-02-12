@@ -11,19 +11,35 @@ function tokenExpireAtMidnightJKT() {
 function setAuthCookie(res, user) {
   const exp = tokenExpireAtMidnightJKT();
   const token = jwt.sign({ user, exp }, process.env.JWT_SECRET);
+  const isSecure =
+    process.env.FORCE_SECURE_COOKIE === "1" ||
+    process.env.NODE_ENV === "production" ||
+    process.env.VERCEL === "1";
   const cookie = [
     `token=${token}`,
     "HttpOnly",
     "Path=/",
     "SameSite=Lax",
-    "Secure",                 // wajib di Vercel/HTTPS
+    isSecure ? "Secure" : "",
     `Max-Age=${exp - Math.floor(Date.now()/1000)}`
   ].join("; ");
   res.setHeader("Set-Cookie", cookie);
 }
 
 function clearAuthCookie(res) {
-  res.setHeader("Set-Cookie", "token=; HttpOnly; Path=/; SameSite=Lax; Secure; Max-Age=0");
+  const isSecure =
+    process.env.FORCE_SECURE_COOKIE === "1" ||
+    process.env.NODE_ENV === "production" ||
+    process.env.VERCEL === "1";
+  const cookie = [
+    "token=",
+    "HttpOnly",
+    "Path=/",
+    "SameSite=Lax",
+    isSecure ? "Secure" : "",
+    "Max-Age=0"
+  ].join("; ");
+  res.setHeader("Set-Cookie", cookie);
 }
 
 function requireAuth(req, res) {

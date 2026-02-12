@@ -4,7 +4,7 @@ const { requireAuth } = require("./_lib/jwt");
 
 module.exports = async (req, res) => {
   const auth = await requireAuth(req, res);
-  if (!auth) return;
+  if (!auth) return res.status(401).json({ message: "Unauthorized" });
 
   try {
     const { dates, sumMap, expMap } = await readAllSummaryAndExpenses(process.env.SPREADSHEET_ID);
@@ -18,7 +18,7 @@ module.exports = async (req, res) => {
       return {
         date: d,
         income: sum.income || 0,
-        totalExpense: sum.total || 0,
+        total: sum.total || 0,
         cashStart: sum.cashStart || 0,
         cashEnd: sum.cashEnd || 0,
         expenses: list.map(x => ({
@@ -29,7 +29,7 @@ module.exports = async (req, res) => {
       };
     });
 
-    res.json(days);
+    res.json({ days });
   } catch (e) {
     console.error(e);
     res.status(500).json({ message: "server error" });

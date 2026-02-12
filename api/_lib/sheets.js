@@ -145,6 +145,7 @@ module.exports = {
   dateJKTYYYYMMDD,
   sheetsClient,
   // pastikan yang lain tetap diexport di sini:
+  toNum,
   readTodayBatch,
   createSummaryRow,
   setIncome,
