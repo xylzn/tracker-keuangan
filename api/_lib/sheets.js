@@ -97,6 +97,19 @@ async function ensureCashFormulas(spreadsheetId, rowIndex) {
   });
 }
 
+async function clearSummaryAndExpenses(spreadsheetId) {
+  const sheets = await sheetsClient();
+  await sheets.spreadsheets.values.clear({
+    spreadsheetId,
+    range: `${SHEET_SUMMARY}!A2:G`,
+    requestBody: {}
+  });
+  await sheets.spreadsheets.values.clear({
+    spreadsheetId,
+    range: `${SHEET_EXPENSES}!A2:D`,
+    requestBody: {}
+  });
+}
 async function setIncome(spreadsheetId, rowIndex, amount) {
   const sheets = await sheetsClient();
   await sheets.spreadsheets.values.update({
@@ -159,6 +172,7 @@ module.exports = {
   readTodayBatch,
   createSummaryRow,
   ensureCashFormulas,
+  clearSummaryAndExpenses,
   setIncome,
   appendExpense,
   readAllSummaryAndExpenses
