@@ -18,7 +18,8 @@ module.exports = async (req, res) => {
     await createSummaryRow(sid, dateStr);
     ({ rowIndex, summaryIncome } = await readTodayBatch(sid, dateStr));
   }
-  if (summaryIncome != null) return res.status(409).json({ message: "income already set" });
+  if (summaryIncome != null && Number(summaryIncome) !== 0)
+    return res.status(409).json({ message: "income already set" });
 
   await setIncome(sid, rowIndex, amount);
   res.status(200).json({ message: "ok" });

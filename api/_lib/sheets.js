@@ -76,14 +76,24 @@ async function createSummaryRow(spreadsheetId, dateStr) {
   const nowISO = new Date().toISOString().slice(0,19).replace("T"," ");
   const totalFormula   = '=SUMIF(expenses!A:A; INDIRECT("A"&ROW()); expenses!B:B)';
   const alasanFormula  = '=IFERROR(TEXTJOIN(", "; TRUE; FILTER(expenses!C:C; expenses!A:A=INDIRECT("A"&ROW()))); "")';
-  const cashStartFormula = '=IFERROR(INDEX(G:G; ROW()-1); 0)';
-  const cashEndFormula   = '=INDIRECT("F"&ROW()) + INDIRECT("B"&ROW()) - INDIRECT("C"&ROW())';
+  const cashStartFormula = '0';
+  const cashEndFormula   = '=IFERROR(INDEX(G:G; ROW()-1); 0) + INDIRECT("B"&ROW()) - INDIRECT("C"&ROW())';
 
   await sheets.spreadsheets.values.append({
     spreadsheetId,
     range: `${SHEET_SUMMARY}!A:G`,
     valueInputOption: "USER_ENTERED",
     requestBody: { values: [[dateStr,"",totalFormula,alasanFormula,nowISO,cashStartFormula,cashEndFormula]] }
+  });
+}
+
+async function ensureCashFormulas(spreadsheetId, rowIndex) {
+  const sheets = await sheetsClient();
+  await sheets.spreadsheets.values.update({
+    spreadsheetId,
+    range: `${SHEET_SUMMARY}!F${rowIndex}:G${rowIndex}`,
+    valueInputOption: "USER_ENTERED",
+    requestBody: { values: [[ '0', '=IFERROR(INDEX(G:G; ROW()-1); 0) + INDIRECT("B"&ROW()) - INDIRECT("C"&ROW())' ]] }
   });
 }
 
@@ -148,6 +158,7 @@ module.exports = {
   toNum,
   readTodayBatch,
   createSummaryRow,
+  ensureCashFormulas,
   setIncome,
   appendExpense,
   readAllSummaryAndExpenses

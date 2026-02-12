@@ -1,5 +1,5 @@
 // api/today.js
-const { readTodayBatch, createSummaryRow, dateJKTYYYYMMDD, toNum } = require("./_lib/sheets");
+const { readTodayBatch, createSummaryRow, dateJKTYYYYMMDD, toNum, ensureCashFormulas } = require("./_lib/sheets");
 const { requireAuth } = require("./_lib/jwt");
 
 module.exports = async (req, res) => {
@@ -19,6 +19,7 @@ module.exports = async (req, res) => {
       ({ rowIndex, items, summaryIncome, summaryTotal, cashStart, cashEnd } =
         await readTodayBatch(process.env.SPREADSHEET_ID, dateStr));
     }
+    await ensureCashFormulas(process.env.SPREADSHEET_ID, rowIndex);
 
     // incomeSet TRUE hanya kalau summaryIncome ada dan bukan 0
     const parsedIncome = toNum(summaryIncome);
