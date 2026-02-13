@@ -212,6 +212,9 @@ function MonthlySection() {
         <KPI title="Total Pengeluaran" value={nf0(data.totalExpense)} />
         <KPI title="Netto Bulan Ini" value={nf0(data.totalIncome - data.totalExpense)} />
         <KPI title="Jumlah Transaksi" value={data.transactionsCount || 0} />
+        {data.days?.length ? (
+          <KPI title="Tabungan (akhir bulan)" value={nf0(data.days[0]?.cashEnd)} />
+        ) : null}
       </div>
 
       {data.topExpense && (
@@ -237,14 +240,13 @@ function MonthlySection() {
                 <th className="py-2.5 px-3">Tanggal</th>
                 <th className="py-2.5 px-3">Pendapatan</th>
                 <th className="py-2.5 px-3">Total Pengeluaran</th>
-                <th className="py-2.5 px-3">Uang Dingin Awal</th>
-                <th className="py-2.5 px-3">Uang Dingin Akhir</th>
+                <th className="py-2.5 px-3">Tabungan</th>
               </tr>
             </thead>
             <tbody>
               {(!data.days || data.days.length === 0) && (
                 <tr>
-                  <td colSpan="5" className="py-6 text-center opacity-70">
+                  <td colSpan="4" className="py-6 text-center opacity-70">
                     Belum ada data bulan ini.
                   </td>
                 </tr>
@@ -254,7 +256,6 @@ function MonthlySection() {
                   <td className="py-2.5 px-3">{d.date}</td>
                   <td className="py-2.5 px-3">{nf0(d.income)}</td>
                   <td className="py-2.5 px-3">{nf0(d.total)}</td>
-                  <td className="py-2.5 px-3">{nf0(d.cashStart)}</td>
                   <td className="py-2.5 px-3">{nf0(d.cashEnd)}</td>
                 </tr>
               ))}
@@ -262,6 +263,88 @@ function MonthlySection() {
           </table>
         </div>
       </Card>
+
+      <div className="flex justify-end">
+        <button
+          onClick={()=>{
+            const w = window.open("", "_blank");
+            const doc = `
+<!doctype html><html><head><meta charset="utf-8"><title>Tutup Buku ${data.month}</title>
+<style>
+@page{ size:A4; margin:16mm }
+@media print{
+  body{ margin:0 }
+}
+body{font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;color:#111}
+.container{padding:24px}
+header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.brand{display:flex;align-items:center;gap:10px}
+.logo{width:28px;height:28px;border-radius:6px;background:linear-gradient(135deg,#a855f7,#0ea5e9)}
+h1{font-size:18px;margin:0}
+.meta{font-size:12px;color:#555}
+.kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:12px 0 18px}
+.card{border:1px solid #ddd;border-radius:10px;padding:10px}
+.card strong{display:block;font-size:12px;color:#555;margin-bottom:4px}
+.card div{font-weight:600}
+.section{margin:10px 0 16px}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead th{background:#f5f5f5}
+th,td{border:1px solid #ddd;padding:7px 9px;text-align:left}
+tbody tr:nth-child(even){background:#fafafa}
+.small{font-size:12px;color:#555}
+.nowrap{white-space:nowrap}
+.break-avoid{page-break-inside:avoid}
+</style>
+</head><body>
+<div class="container">
+  <header>
+    <div class="brand">
+      <div class="logo"></div>
+      <div>
+        <h1>Laporan Tutup Buku</h1>
+        <div class="meta">Periode: ${data.month} • Dicetak: ${new Date().toLocaleString("id-ID",{hour12:false})}</div>
+      </div>
+    </div>
+    <div class="small nowrap">BOITRACK</div>
+  </header>
+
+  <section class="kpi break-avoid">
+    <div class="card"><strong>Total Pendapatan</strong><div>${nf0(data.totalIncome)}</div></div>
+    <div class="card"><strong>Total Pengeluaran</strong><div>${nf0(data.totalExpense)}</div></div>
+    <div class="card"><strong>Netto Bulan Ini</strong><div>${nf0(data.totalIncome - data.totalExpense)}</div></div>
+    <div class="card"><strong>Jumlah Transaksi</strong><div>${data.transactionsCount || 0}</div></div>
+  </section>
+
+  ${data.topExpense ? `
+  <section class="section break-avoid">
+    <div class="card">
+      <strong>Pengeluaran Terbesar</strong>
+      <div>${nf0(data.topExpense.amount)} — ${data.topExpense.reason}</div>
+      <div class="small">${data.topExpense.date} ${data.topExpense.ts}</div>
+    </div>
+  </section>` : ``}
+
+  <section class="section">
+    <table>
+      <thead><tr><th>Tanggal</th><th>Pendapatan</th><th>Total Pengeluaran</th><th>Tabungan</th></tr></thead>
+      <tbody>
+        ${(data.days||[]).map(d=>`<tr><td>${d.date}</td><td>${nf0(d.income)}</td><td>${nf0(d.total)}</td><td>${nf0(d.cashEnd)}</td></tr>`).join("")}
+      </tbody>
+    </table>
+  </section>
+</div>
+</body></html>`;
+            w.document.write(doc);
+            w.document.close();
+            w.focus();
+            w.print();
+          }}
+          className="px-3 py-2 rounded-xl bg-white/20 hover:bg-white/30 text-sm flex items-center gap-2"
+        >
+          <i data-feather="download" className="w-4 h-4"></i>
+          <span>Unduh PDF</span>
+        </button>
+      </div>
     </div>
   );
 }
@@ -301,11 +384,10 @@ function HistorySection() {
         <div key={idx} className="space-y-2">
           <div className="text-md uppercase tracking-wide text-slate-300">🗓️ {d.date}</div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             <KPI title="Pendapatan" value={nf(d.income)} />
             <KPI title="Total Pengeluaran" value={nf(d.total)} />
-            <KPI title="Uang Dingin Awal" value={nf(d.cashStart)} />
-            <KPI title="Uang Dingin Akhir" value={nf(d.cashEnd)} />
+            <KPI title="Tabungan" value={nf(d.cashEnd)} />
           </div>
 
           <div className="overflow-x-auto glass rounded-xl p-3 shadow-glass">
@@ -448,11 +530,10 @@ function App() {
               </div>
 
               {/* KPI */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                 <KPI title="Total Pengeluaran" value={nf(today.totalExpense || 0)} />
                 <KPI title="Sisa Hari Ini" value={nf(remain)} accent={remain >= 0 ? "text-white" : "text-rose-300"} />
-                <KPI title="Uang Dingin Awal" value={nf(today.cashStart || 0)} />
-                <KPI title="Uang Dingin Akhir" value={nf(today.cashEnd || 0)} />
+            <KPI title="Tabungan" value={nf(today.cashEnd || 0)} />
               </div>
 
               {/* Forms */}
