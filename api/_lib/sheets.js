@@ -16,6 +16,10 @@ function dateJKTYYYYMMDD(d = jktToday()) {
   return `${y}-${m}-${day}`;
 }
 
+function jktNowString() {
+  return new Date().toLocaleString("sv-SE", { timeZone: "Asia/Jakarta", hour12: false });
+}
+
 // --- Google Sheets client: pakai env JSON langsung ---
 async function sheetsClient() {
   if (!process.env.GOOGLE_SERVICE_ACCOUNT_JSON) {
@@ -73,7 +77,7 @@ async function readTodayBatch(spreadsheetId, dateStr) {
 
 async function createSummaryRow(spreadsheetId, dateStr) {
   const sheets = await sheetsClient();
-  const nowISO = new Date().toISOString().slice(0,19).replace("T"," ");
+  const nowISO = jktNowString();
   const totalFormula   = '=SUMIF(expenses!A:A; INDIRECT("A"&ROW()); expenses!B:B)';
   const alasanFormula  = '=IFERROR(TEXTJOIN(", "; TRUE; FILTER(expenses!C:C; expenses!A:A=INDIRECT("A"&ROW()))); "")';
   const cashStartFormula = '0';
@@ -122,7 +126,7 @@ async function setIncome(spreadsheetId, rowIndex, amount) {
 
 async function appendExpense(spreadsheetId, dateStr, amount, reason) {
   const sheets = await sheetsClient();
-  const ts = new Date().toISOString().slice(0,19).replace("T"," ");
+  const ts = jktNowString();
   await sheets.spreadsheets.values.append({
     spreadsheetId,
     range: `${SHEET_EXPENSES}!A:D`,
@@ -166,6 +170,7 @@ async function readAllSummaryAndExpenses(spreadsheetId) {
 module.exports = {
   jktToday,
   dateJKTYYYYMMDD,
+  jktNowString,
   sheetsClient,
   // pastikan yang lain tetap diexport di sini:
   toNum,
