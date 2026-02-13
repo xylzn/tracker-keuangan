@@ -270,33 +270,39 @@ function MonthlySection() {
             const w = window.open("", "_blank");
             const doc = `
 <!doctype html><html><head><meta charset="utf-8"><title>Tutup Buku ${data.month}</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
-@page{ size:A4; margin:16mm }
+@page{ size:A4 portrait; margin:16mm }
 @media print{
   body{ margin:0 }
 }
 body{font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;color:#111}
-.container{padding:24px}
+.container{padding:24px; position:relative}
+.ribbon{position:absolute; inset:0 0 auto 0; height:8px; background:linear-gradient(90deg,#4f46e5,#0ea5e9,#34d399)}
 header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
 .brand{display:flex;align-items:center;gap:10px}
-.logo{width:28px;height:28px;border-radius:6px;background:linear-gradient(135deg,#a855f7,#0ea5e9)}
-h1{font-size:18px;margin:0}
+.logo{width:36px;height:36px;border-radius:8px;background:radial-gradient(circle at 30% 30%,#a855f7 0,#0ea5e9 60%,#34d399 100%)}
+h1{font-size:20px;margin:0;font-weight:800;letter-spacing:.2px}
 .meta{font-size:12px;color:#555}
-.kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:12px 0 18px}
-.card{border:1px solid #ddd;border-radius:10px;padding:10px}
-.card strong{display:block;font-size:12px;color:#555;margin-bottom:4px}
-.card div{font-weight:600}
+.kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:14px 0 20px}
+.card{border:1px solid #e5e7eb;border-radius:12px;padding:12px;background:linear-gradient(180deg,#ffffff, #f9fafb)}
+.card strong{display:block;font-size:12px;color:#4b5563;margin-bottom:6px}
+.card div{font-weight:700;font-size:14px;color:#111}
 .section{margin:10px 0 16px}
 table{width:100%;border-collapse:collapse;font-size:12px}
-thead th{background:#f5f5f5}
-th,td{border:1px solid #ddd;padding:7px 9px;text-align:left}
+thead th{background:#eef2ff;color:#1f2937}
+th,td{border:1px solid #e5e7eb;padding:8px 10px;text-align:left}
 tbody tr:nth-child(even){background:#fafafa}
 .small{font-size:12px;color:#555}
 .nowrap{white-space:nowrap}
 .break-avoid{page-break-inside:avoid}
+.footer{position:fixed;bottom:8mm;left:0;right:0;text-align:center;font-size:11px;color:#6b7280}
+.signature{display:flex;gap:24px;justify-content:flex-end;margin-top:24px}
+.sig{border-top:1px solid #d1d5db;padding-top:6px;font-size:12px;color:#374151;min-width:160px;text-align:center}
 </style>
 </head><body>
 <div class="container">
+  <div class="ribbon"></div>
   <header>
     <div class="brand">
       <div class="logo"></div>
@@ -332,12 +338,18 @@ tbody tr:nth-child(even){background:#fafafa}
       </tbody>
     </table>
   </section>
+
+  <div class="signature">
+    <div class="sig">Disusun oleh</div>
+    <div class="sig">Disetujui</div>
+  </div>
 </div>
+<div class="footer">Laporan Tutup Buku • Periode ${data.month}</div>
 </body></html>`;
             w.document.write(doc);
             w.document.close();
             w.focus();
-            w.print();
+            setTimeout(()=>w.print(), 300);
           }}
           className="px-3 py-2 rounded-xl bg-white/20 hover:bg-white/30 text-sm flex items-center gap-2"
         >
