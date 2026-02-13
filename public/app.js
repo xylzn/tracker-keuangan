@@ -65,6 +65,7 @@ function SidebarList({ tab, setTab, onPicked }) {
       </div>
       <Item icon="grid"  label="Beranda" active={tab==="home"}    onClick={() => setTab("home")} />
       <Item icon="clock" label="History" active={tab==="history"} onClick={() => setTab("history")} />
+      <Item icon="book"  label="Tutup Buku" active={tab==="monthly"} onClick={() => setTab("monthly")} />
     </>
   );
 }
@@ -141,6 +142,129 @@ const KPI = ({ title, value, sub, accent }) => (
   </Card>
 );
 
+function MonthlySection() {
+  const [month, setMonth] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState(null);
+  const toast = useToast();
+
+  async function load(m) {
+    setLoading(true);
+    try {
+      const qs = m ? `?month=${encodeURIComponent(m)}` : "";
+      const r = await fetch(`/api/monthly-summary${qs}`, { credentials: "include" });
+      if (!r.ok) throw new Error("err");
+      const d = await r.json();
+      setData(d);
+      setMonth(d.month);
+    } catch {
+      setData(null);
+      toast.push("Gagal memuat ringkasan bulanan", "err");
+    } finally {
+      setLoading(false);
+      setTimeout(() => feather.replace(), 0);
+    }
+  }
+
+  useEffect(() => { load(""); }, []);
+
+  if (loading)
+    return (
+      <div className="text-center text-slate-400 mt-10 animate-pulse">
+        Memuat ringkasan bulanan...
+      </div>
+    );
+
+  if (!data)
+    return (
+      <div className="text-center text-slate-400 mt-10">
+        Belum ada data untuk bulan ini.
+      </div>
+    );
+
+  const nf0 = (v) => nf(v || 0);
+
+  return (
+    <div className="space-y-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="text-lg font-semibold">
+          Tutup Buku {data.month}
+        </div>
+        <div className="flex items-center gap-2">
+          <input
+            className="glass rounded-xl px-3 py-2 border border-white/10 outline-none text-sm bg-transparent"
+            placeholder="YYYY-MM"
+            value={month}
+            onChange={(e) => setMonth(e.target.value)}
+          />
+          <button
+            onClick={() => load(month)}
+            className="px-3 py-2 rounded-xl bg-white/20 hover:bg-white/30 text-sm flex items-center gap-2"
+          >
+            <i data-feather="refresh-ccw" className="w-4 h-4"></i>
+            <span>Lihat</span>
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <KPI title="Total Pendapatan" value={nf0(data.totalIncome)} />
+        <KPI title="Total Pengeluaran" value={nf0(data.totalExpense)} />
+        <KPI title="Netto Bulan Ini" value={nf0(data.totalIncome - data.totalExpense)} />
+        <KPI title="Jumlah Transaksi" value={data.transactionsCount || 0} />
+      </div>
+
+      {data.topExpense && (
+        <Card title="Pengeluaran Terbesar Bulan Ini">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <div className="text-sm text-slate-300">{data.topExpense.date}</div>
+              <div className="text-lg font-semibold">{nf0(data.topExpense.amount)}</div>
+              <div className="text-sm text-slate-300">{data.topExpense.reason}</div>
+            </div>
+            <div className="text-xs text-slate-400">
+              {data.topExpense.ts}
+            </div>
+          </div>
+        </Card>
+      )}
+
+      <Card title="Ringkasan Harian Bulan Ini">
+        <div className="overflow-x-auto rounded-xl">
+          <table className="min-w-full text-sm">
+            <thead className="bg-white/10">
+              <tr className="text-left">
+                <th className="py-2.5 px-3">Tanggal</th>
+                <th className="py-2.5 px-3">Pendapatan</th>
+                <th className="py-2.5 px-3">Total Pengeluaran</th>
+                <th className="py-2.5 px-3">Uang Dingin Awal</th>
+                <th className="py-2.5 px-3">Uang Dingin Akhir</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(!data.days || data.days.length === 0) && (
+                <tr>
+                  <td colSpan="5" className="py-6 text-center opacity-70">
+                    Belum ada data bulan ini.
+                  </td>
+                </tr>
+              )}
+              {data.days && data.days.map((d, i) => (
+                <tr key={i} className="border-t border-white/10 hover:bg-white/5">
+                  <td className="py-2.5 px-3">{d.date}</td>
+                  <td className="py-2.5 px-3">{nf0(d.income)}</td>
+                  <td className="py-2.5 px-3">{nf0(d.total)}</td>
+                  <td className="py-2.5 px-3">{nf0(d.cashStart)}</td>
+                  <td className="py-2.5 px-3">{nf0(d.cashEnd)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+    </div>
+  );
+}
 /* ---------- history view ---------- */
 function HistorySection() {
   const [days, setDays] = useState([]);
@@ -397,8 +521,10 @@ function App() {
                 </div>
               </Card>
             </>
-          ) : (
+          ) : tab === "history" ? (
             <HistorySection />
+          ) : (
+            <MonthlySection />
           )}
 
           <footer className="py-6 text-center text-xs opacity-70">

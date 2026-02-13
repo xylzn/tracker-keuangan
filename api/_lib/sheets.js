@@ -167,6 +167,33 @@ async function readAllSummaryAndExpenses(spreadsheetId) {
   return { dates, sumMap, expMap };
 }
 
+async function readMonthlySummary(spreadsheetId, monthStr) {
+  const { dates, sumMap, expMap } = await readAllSummaryAndExpenses(spreadsheetId);
+  const md = dates.filter(d => String(d).startsWith(monthStr));
+  let totalIncome = 0, totalExpense = 0, transactionsCount = 0;
+  let topExpense = null;
+  const days = md.map(d => {
+    const sum = sumMap.get(d) || {};
+    const list = expMap.get(d) || [];
+    totalIncome += sum.income || 0;
+    totalExpense += sum.total || 0;
+    transactionsCount += list.length;
+    for (const x of list) {
+      if (!topExpense || (x.amount || 0) > (topExpense.amount || 0)) {
+        topExpense = { amount: x.amount || 0, reason: x.reason || "", ts: x.ts || "", date: d };
+      }
+    }
+    return {
+      date: d,
+      income: sum.income || 0,
+      total: sum.total || 0,
+      cashStart: sum.cashStart || 0,
+      cashEnd: sum.cashEnd || 0,
+      expenses: list
+    };
+  });
+  return { month: monthStr, totalIncome, totalExpense, transactionsCount, topExpense, days };
+}
 module.exports = {
   jktToday,
   dateJKTYYYYMMDD,
@@ -177,6 +204,7 @@ module.exports = {
   readTodayBatch,
   createSummaryRow,
   ensureCashFormulas,
+  readMonthlySummary,
   clearSummaryAndExpenses,
   setIncome,
   appendExpense,
