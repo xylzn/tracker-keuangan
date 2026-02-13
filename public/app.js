@@ -192,7 +192,8 @@ function MonthlySection() {
         </div>
         <div className="flex items-center gap-2">
           <input
-            className="glass rounded-xl px-3 py-2 border border-white/10 outline-none text-sm bg-transparent"
+            type="month"
+            className="glass rounded-xl px-3 py-2 border border-white/10 outline-none text-sm bg-transparent w-full sm:w-auto"
             placeholder="YYYY-MM"
             value={month}
             onChange={(e) => setMonth(e.target.value)}
@@ -207,7 +208,7 @@ function MonthlySection() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <KPI title="Total Pendapatan" value={nf0(data.totalIncome)} />
         <KPI title="Total Pengeluaran" value={nf0(data.totalExpense)} />
         <KPI title="Netto Bulan Ini" value={nf0(data.totalIncome - data.totalExpense)} />
@@ -233,7 +234,24 @@ function MonthlySection() {
       )}
 
       <Card title="Ringkasan Harian Bulan Ini">
-        <div className="overflow-x-auto rounded-xl">
+        <div className="sm:hidden space-y-3">
+          {(!data.days || data.days.length === 0) && (
+            <div className="py-6 text-center opacity-70">Belum ada data bulan ini.</div>
+          )}
+          {data.days && data.days.map((d, i) => (
+            <div key={i} className="glass rounded-xl p-3 border border-white/10">
+              <div className="flex items-center justify-between">
+                <div className="font-semibold">{d.date}</div>
+                <div className="text-xs opacity-70">Tabungan: {nf0(d.cashEnd)}</div>
+              </div>
+              <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
+                <div>Pendapatan: <span className="font-semibold">{nf0(d.income)}</span></div>
+                <div>Total Pengeluaran: <span className="font-semibold">{nf0(d.total)}</span></div>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="hidden sm:block overflow-x-auto rounded-xl">
           <table className="min-w-full text-sm">
             <thead className="bg-white/10">
               <tr className="text-left">
