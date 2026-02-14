@@ -81,7 +81,7 @@ async function createSummaryRow(spreadsheetId, dateStr) {
   const totalFormula   = '=SUMIF(expenses!A:A; INDIRECT("A"&ROW()); expenses!B:B)';
   const alasanFormula  = '=IFERROR(TEXTJOIN(", "; TRUE; FILTER(expenses!C:C; expenses!A:A=INDIRECT("A"&ROW()))); "")';
   const cashStartFormula = '0';
-  const cashEndFormula   = '=IFERROR(INDEX(G:G; ROW()-1); 0) + INDIRECT("B"&ROW()) - INDIRECT("C"&ROW())';
+  const cashEndFormula   = '=IFERROR(LOOKUP(2; 1/(G:G<>""); G:G); 0) + INDIRECT("B"&ROW()) - INDIRECT("C"&ROW())';
 
   await sheets.spreadsheets.values.append({
     spreadsheetId,
@@ -97,7 +97,7 @@ async function ensureCashFormulas(spreadsheetId, rowIndex) {
     spreadsheetId,
     range: `${SHEET_SUMMARY}!F${rowIndex}:G${rowIndex}`,
     valueInputOption: "USER_ENTERED",
-    requestBody: { values: [[ '0', '=IFERROR(INDEX(G:G; ROW()-1); 0) + INDIRECT("B"&ROW()) - INDIRECT("C"&ROW())' ]] }
+    requestBody: { values: [[ '0', '=IFERROR(LOOKUP(2; 1/(G:G<>""); G:G); 0) + INDIRECT("B"&ROW()) - INDIRECT("C"&ROW())' ]] }
   });
 }
 
