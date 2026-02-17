@@ -101,6 +101,16 @@ async function ensureCashFormulas(spreadsheetId, rowIndex) {
   });
 }
 
+async function setCashFGValue(spreadsheetId, rowIndex, cashEndValue) {
+  const sheets = await sheetsClient();
+  await sheets.spreadsheets.values.update({
+    spreadsheetId,
+    range: `${SHEET_SUMMARY}!F${rowIndex}:G${rowIndex}`,
+    valueInputOption: "USER_ENTERED",
+    requestBody: { values: [[ '0', cashEndValue ]] }
+  });
+}
+
 async function clearSummaryAndExpenses(spreadsheetId) {
   const sheets = await sheetsClient();
   await sheets.spreadsheets.values.clear({
@@ -207,6 +217,7 @@ module.exports = {
   readTodayBatch,
   createSummaryRow,
   ensureCashFormulas,
+  setCashFGValue,
   readMonthlySummary,
   clearSummaryAndExpenses,
   setIncome,

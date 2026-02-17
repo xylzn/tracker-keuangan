@@ -1,5 +1,5 @@
 // api/today.js
-const { readTodayBatch, createSummaryRow, dateJKTYYYYMMDD, toNum, ensureCashFormulas } = require("./_lib/sheets");
+const { readTodayBatch, createSummaryRow, dateJKTYYYYMMDD, toNum, ensureCashFormulas, setCashFGValue } = require("./_lib/sheets");
 const { requireAuth } = require("./_lib/jwt");
 
 module.exports = async (req, res) => {
@@ -25,7 +25,7 @@ module.exports = async (req, res) => {
 
     // fallback kalkulasi tabungan jika belum terhitung (mis. delay evaluasi formula)
     let cashEndFinal = toNum(cashEnd);
-    if (cashEndFinal === 0) {
+    if (!Number.isFinite(cashEndFinal) || cashEndFinal === 0) {
       let prevG = 0;
       if (Array.isArray(summaryRows) && summaryRows.length) {
         // summaryRows mulai dari A2 => index baris hari ini adalah rowIndex-2
@@ -37,6 +37,8 @@ module.exports = async (req, res) => {
       }
       cashEndFinal = toNum(prevG) + toNum(summaryIncome) - toNum(summaryTotal);
     }
+    // persist nilai ke G agar konsisten untuk laporan lain
+    await setCashFGValue(process.env.SPREADSHEET_ID, rowIndex, cashEndFinal);
 
     // incomeSet TRUE hanya kalau summaryIncome ada dan bukan 0
     const parsedIncome = toNum(summaryIncome);
