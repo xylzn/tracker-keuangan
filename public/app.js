@@ -456,6 +456,12 @@ tbody tr:nth-child(even){background:#fafafa}
 .signature{display:flex;gap:24px;justify-content:flex-end;margin-top:24px}
 .sig{border-top:1px solid #d1d5db;padding-top:6px;font-size:12px;color:#374151;min-width:160px;text-align:center}
 .charts{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px}
+.charts > div{display:flex;flex-direction:column;align-items:center}
+.toolbar{display:flex;gap:8px}
+.btn{border:1px solid #e5e7eb;background:#fff;border-radius:8px;padding:6px 10px;font-size:12px;cursor:pointer}
+.btn:hover{background:#f3f4f6}
+.no-print{display:inline-block}
+@media print {.no-print{display:none}}
 .legend{font-size:12px}
 .legend-row{display:flex;justify-content:space-between;align-items:center;margin:4px 0}
 .dot{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:middle}
@@ -471,7 +477,10 @@ tbody tr:nth-child(even){background:#fafafa}
         <div class="meta">Periode: ${data.month} • Dicetak: ${new Date().toLocaleString("id-ID",{hour12:false})}</div>
       </div>
     </div>
-    <div class="small nowrap">BOITRACK</div>
+    <div class="toolbar no-print">
+      <button class="btn" onclick="window.print()">Cetak</button>
+      <button class="btn" id="dl">Download PDF</button>
+    </div>
   </header>
 
   <section class="kpi break-avoid">
@@ -531,11 +540,32 @@ tbody tr:nth-child(even){background:#fafafa}
   </div>
 </div>
 <div class="footer">Laporan Tutup Buku • Periode ${data.month}</div>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script>
+  (function(){
+    const btn = document.getElementById('dl');
+    if(!btn) return;
+    btn.addEventListener('click', async ()=>{
+      const { jsPDF } = window.jspdf || {};
+      if(!jsPDF){ alert('Gagal memuat PDF engine'); return; }
+      const a4 = { w: 210, h: 297 };
+      const node = document.querySelector('.container');
+      const canvas = await html2canvas(node, { scale: 2, useCORS:true, backgroundColor:'#ffffff' });
+      const imgData = canvas.toDataURL('image/jpeg', 0.92);
+      const pdf = new jsPDF('p','mm','a4');
+      const imgW = a4.w;
+      const imgH = (canvas.height / canvas.width) * imgW;
+      pdf.addImage(imgData, 'JPEG', 0, 0, imgW, imgH, '', 'FAST');
+      pdf.save('tutup-buku-${data.month}.pdf');
+    });
+  })();
+</script>
 </body></html>`;
             w.document.write(doc);
             w.document.close();
             w.focus();
-            setTimeout(()=>w.print(), 300);
+            // user bisa pilih Cetak atau Download PDF
           }}
           className="px-3 py-2 rounded-xl bg-white/20 hover:bg-white/30 text-sm flex items-center gap-2"
         >

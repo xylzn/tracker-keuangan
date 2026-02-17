@@ -10,18 +10,33 @@ module.exports = async (req, res) => {
   try {
     const dateStr = dateJKTYYYYMMDD();
 
-    let { rowIndex, items, summaryIncome, summaryTotal, cashStart, cashEnd } =
+    let { rowIndex, items, summaryIncome, summaryTotal, cashStart, cashEnd, summaryRows } =
       await readTodayBatch(process.env.SPREADSHEET_ID, dateStr);
 
     // kalau belum ada baris summary, buat lalu baca ulang sekali
     if (rowIndex === -1) {
       await createSummaryRow(process.env.SPREADSHEET_ID, dateStr);
-      ({ rowIndex, items, summaryIncome, summaryTotal, cashStart, cashEnd } =
+      ({ rowIndex, items, summaryIncome, summaryTotal, cashStart, cashEnd, summaryRows } =
         await readTodayBatch(process.env.SPREADSHEET_ID, dateStr));
     }
     await ensureCashFormulas(process.env.SPREADSHEET_ID, rowIndex);
-    ({ rowIndex, items, summaryIncome, summaryTotal, cashStart, cashEnd } =
+    ({ rowIndex, items, summaryIncome, summaryTotal, cashStart, cashEnd, summaryRows } =
       await readTodayBatch(process.env.SPREADSHEET_ID, dateStr));
+
+    // fallback kalkulasi tabungan jika belum terhitung (mis. delay evaluasi formula)
+    let cashEndFinal = toNum(cashEnd);
+    if (cashEndFinal === 0) {
+      let prevG = 0;
+      if (Array.isArray(summaryRows) && summaryRows.length) {
+        // summaryRows mulai dari A2 => index baris hari ini adalah rowIndex-2
+        const todayIdx = Math.max(0, rowIndex - 2);
+        for (let i = todayIdx - 1; i >= 0; i--) {
+          const g = toNum(summaryRows[i]?.[6]);
+          if (!Number.isNaN(g)) { prevG = g; break; }
+        }
+      }
+      cashEndFinal = toNum(prevG) + toNum(summaryIncome) - toNum(summaryTotal);
+    }
 
     // incomeSet TRUE hanya kalau summaryIncome ada dan bukan 0
     const parsedIncome = toNum(summaryIncome);
@@ -33,7 +48,7 @@ module.exports = async (req, res) => {
       incomeSet,
       totalExpense: toNum(summaryTotal),
       cashStart: toNum(cashStart),
-      cashEnd: toNum(cashEnd),
+      cashEnd: cashEndFinal,
       expenses: (items || []).map((r) => {
         // support skema baru (A,B,C,D,E) dan lama (A,B,C,D)
         if (Array.isArray(r) && r.length >= 5) {

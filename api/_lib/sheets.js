@@ -72,7 +72,7 @@ async function readTodayBatch(spreadsheetId, dateStr) {
   const cashStart      = row ? toNum(row[5]) : 0;    // F
   const cashEnd        = row ? toNum(row[6]) : 0;    // G
 
-  return { rowIndex, items, summaryIncome, summaryTotal, summaryReasons, cashStart, cashEnd };
+  return { rowIndex, items, summaryIncome, summaryTotal, summaryReasons, cashStart, cashEnd, summaryRows };
 }
 
 async function createSummaryRow(spreadsheetId, dateStr) {
