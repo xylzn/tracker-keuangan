@@ -51,7 +51,7 @@ async function readTodayBatch(spreadsheetId, dateStr) {
   const sheets = await sheetsClient();
   const res = await sheets.spreadsheets.values.batchGet({
     spreadsheetId,
-    ranges: [`${SHEET_SUMMARY}!A2:G`, `${SHEET_EXPENSES}!A2:D`],
+    ranges: [`${SHEET_SUMMARY}!A2:G`, `${SHEET_EXPENSES}!A2:E`],
     valueRenderOption: "FORMATTED_VALUE"
   });
 
@@ -124,14 +124,14 @@ async function setIncome(spreadsheetId, rowIndex, amount) {
   });
 }
 
-async function appendExpense(spreadsheetId, dateStr, amount, reason) {
+async function appendExpense(spreadsheetId, dateStr, amount, category, detail) {
   const sheets = await sheetsClient();
   const ts = jktNowString();
   await sheets.spreadsheets.values.append({
     spreadsheetId,
-    range: `${SHEET_EXPENSES}!A:D`,
+    range: `${SHEET_EXPENSES}!A:E`,
     valueInputOption: "USER_ENTERED",
-    requestBody: { values: [[dateStr, amount, reason, ts]] }
+    requestBody: { values: [[dateStr, amount, category, detail || "", ts]] }
   });
 }
 
@@ -140,7 +140,7 @@ async function readAllSummaryAndExpenses(spreadsheetId) {
   const sheets = await sheetsClient();
   const res = await sheets.spreadsheets.values.batchGet({
     spreadsheetId,
-    ranges: [`${SHEET_SUMMARY}!A2:G`, `${SHEET_EXPENSES}!A2:D`],
+    ranges: [`${SHEET_SUMMARY}!A2:G`, `${SHEET_EXPENSES}!A2:E`],
     valueRenderOption: "FORMATTED_VALUE"
   });
   const sum = res.data.valueRanges?.[0]?.values || [];
@@ -150,7 +150,10 @@ async function readAllSummaryAndExpenses(spreadsheetId) {
   for (const r of exp) {
     const d = r?.[0]; if (!d) continue;
     if (!expMap.has(d)) expMap.set(d, []);
-    expMap.get(d).push({ amount: toNum(r?.[1]), reason: r?.[2] || "", ts: r?.[3] || "" });
+    const category = r?.[2] || "";
+    const detail = r?.[3] || "";
+    const reason = detail ? `${category} - ${detail}` : (category || "");
+    expMap.get(d).push({ amount: toNum(r?.[1]), reason, category, detail, ts: r?.[4] || "" });
   }
 
   const sumMap = new Map();

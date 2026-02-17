@@ -142,6 +142,87 @@ const KPI = ({ title, value, sub, accent }) => (
   </Card>
 );
 
+const EXPENSE_CATEGORIES = [
+  "Roko",
+  "Bensin",
+  "Paket",
+  "Makan",
+  "Minum",
+  "Jajan",
+  "Lain-lain",
+];
+
+function inferCategory(reason) {
+  if (!reason) return "Lain-lain";
+  const s = String(reason).toLowerCase();
+  if (/^lain-lain/.test(s)) return "Lain-lain";
+  if (/\brok|rokok|roko\b/.test(s)) return "Roko";
+  if (/\bbensin|bbm|fuel\b/.test(s)) return "Bensin";
+  if (/\bpaket|kurir|ongkir\b/.test(s)) return "Paket";
+  if (/\bmakan|mkn|food\b/.test(s)) return "Makan";
+  if (/\bminum|drink|air|kopi|teh\b/.test(s)) return "Minum";
+  if (/\bjajan|snack|cemilan|camilan\b/.test(s)) return "Jajan";
+  const exact = EXPENSE_CATEGORIES.find(c => c.toLowerCase() === s.trim());
+  return exact || "Lain-lain";
+}
+
+function PieChart({ data, size = 180, donut = false, centerText }) {
+  const total = data.reduce((a, b) => a + Math.max(0, Number(b.value) || 0), 0);
+  const r = size / 2;
+  const inner = donut ? r * 0.6 : 0;
+  let angle = -Math.PI / 2;
+  const segs = data.map(d => {
+    const val = Math.max(0, Number(d.value) || 0);
+    const a = total > 0 ? (val / total) * Math.PI * 2 : 0;
+    const start = angle;
+    const end = angle + a;
+    angle = end;
+    return { ...d, start, end };
+  });
+  const arcs = segs.map((s, i) => {
+    if (s.start === s.end) return null;
+    const large = s.end - s.start > Math.PI ? 1 : 0;
+    const sx = r + r * Math.cos(s.start), sy = r + r * Math.sin(s.start);
+    const ex = r + r * Math.cos(s.end), ey = r + r * Math.sin(s.end);
+    if (!donut) {
+      const d = [
+        `M ${r} ${r}`,
+        `L ${sx} ${sy}`,
+        `A ${r} ${r} 0 ${large} 1 ${ex} ${ey}`,
+        "Z",
+      ].join(" ");
+      return <path key={i} d={d} fill={s.color} />;
+    } else {
+      const r0 = inner, r1 = r;
+      const sx0 = r + r0 * Math.cos(s.start), sy0 = r + r0 * Math.sin(s.start);
+      const ex0 = r + r0 * Math.cos(s.end), ey0 = r + r0 * Math.sin(s.end);
+      const d = [
+        `M ${sx0} ${sy0}`,
+        `A ${r0} ${r0} 0 ${large} 1 ${ex0} ${ey0}`,
+        `L ${ex} ${ey}`,
+        `A ${r1} ${r1} 0 ${large} 0 ${sx} ${sy}`,
+        "Z",
+      ].join(" ");
+      return <path key={i} d={d} fill={s.color} />;
+    }
+  });
+  return (
+    <div className="flex flex-col items-center">
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        {total === 0 ? (
+          <circle cx={r} cy={r} r={r} fill="#e5e7eb" />
+        ) : arcs}
+        {donut && (
+          <circle cx={r} cy={r} r={inner * 0.98} fill="white" />
+        )}
+      </svg>
+      {donut && centerText ? (
+        <div className="mt-2 text-sm opacity-80">{centerText}</div>
+      ) : null}
+    </div>
+  );
+}
+
 function MonthlySection() {
   const [month, setMonth] = useState("");
   const [loading, setLoading] = useState(true);
@@ -232,6 +313,15 @@ function MonthlySection() {
           </div>
         </Card>
       )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <Card title="Distribusi Pengeluaran (Bulan Ini)">
+          <MonthlyExpensesPie days={data.days || []} />
+        </Card>
+        <Card title="Perbandingan Pendapatan vs Pengeluaran">
+          <IncomeExpenseDonut income={data.totalIncome || 0} expense={data.totalExpense || 0} />
+        </Card>
+      </div>
 
       <Card title="Ringkasan Harian Bulan Ini">
         <div className="sm:hidden space-y-3">
@@ -378,6 +468,75 @@ tbody tr:nth-child(even){background:#fafafa}
     </div>
   );
 }
+
+function MonthlyExpensesPie({ days }) {
+  const byCat = React.useMemo(() => {
+    const m = new Map();
+    for (const d of days || []) {
+      for (const e of d.expenses || []) {
+        const cat = e.category || inferCategory(e.reason || "");
+        const cur = m.get(cat) || 0;
+        m.set(cat, cur + (Number(e.amount) || 0));
+      }
+    }
+    return m;
+  }, [days]);
+  const palette = ["#ef4444","#f59e0b","#10b981","#3b82f6","#8b5cf6","#ec4899","#14b8a6","#71717a"];
+  const data = Array.from(byCat.entries())
+    .filter(([,v]) => v > 0)
+    .sort((a,b)=>b[1]-a[1])
+    .map(([label, value], i) => ({ label, value, color: palette[i % palette.length] }));
+  const total = data.reduce((a,b)=>a+b.value,0);
+  return (
+    <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+      <PieChart data={data} size={200} />
+      <div className="flex-1 space-y-2">
+        {!data.length ? (
+          <div className="text-sm opacity-70">Belum ada pengeluaran.</div>
+        ) : data.map((d,i)=>(
+          <div key={i} className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="inline-block w-3 h-3 rounded-sm" style={{background:d.color}}></span>
+              <span className="text-sm">{d.label}</span>
+            </div>
+            <div className="text-sm font-semibold">{nf(d.value)} <span className="opacity-60 text-xs">({total?Math.round(d.value/total*100):0}%)</span></div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function IncomeExpenseDonut({ income, expense }) {
+  const valIncome = Math.max(0, Number(income)||0);
+  const valExpense = Math.max(0, Number(expense)||0);
+  const data = [
+    { label:"Pendapatan", value: valIncome, color:"#10b981" },
+    { label:"Pengeluaran", value: valExpense, color:"#ef4444" },
+  ];
+  const total = valIncome + valExpense;
+  return (
+    <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+      <PieChart data={data} size={200} donut centerText={total?`${Math.round(valExpense/total*100)}% Pengeluaran`:"Tidak ada data"} />
+      <div className="flex-1 space-y-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="inline-block w-3 h-3 rounded-sm" style={{background:data[0].color}}></span>
+            <span className="text-sm">Pendapatan</span>
+          </div>
+          <div className="text-sm font-semibold">{nf(valIncome)}</div>
+        </div>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="inline-block w-3 h-3 rounded-sm" style={{background:data[1].color}}></span>
+            <span className="text-sm">Pengeluaran</span>
+          </div>
+          <div className="text-sm font-semibold">{nf(valExpense)}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
 /* ---------- history view ---------- */
 function HistorySection() {
   const [days, setDays] = useState([]);
@@ -462,7 +621,8 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [incomeVal, setIncomeVal] = useState("");
   const [expNom, setExpNom] = useState("");
-  const [expReason, setExpReason] = useState("");
+  const [expCat, setExpCat] = useState(EXPENSE_CATEGORIES[0]);
+  const [expOther, setExpOther] = useState("");
   const [needLogin, setNeedLogin] = useState(false);
   const toast = useToast();
 
@@ -506,17 +666,24 @@ function App() {
 
   async function addExpense(e) {
     e.preventDefault();
-    if (!expNom || !expReason) return toast.push("Lengkapi nominal & alasan", "err");
+    if (!expNom) return toast.push("Lengkapi nominal", "err");
+    if (!expCat) return toast.push("Pilih kategori", "err");
+    if (expCat === "Lain-lain" && !expOther.trim()) return toast.push("Tulis alasan lain-lain", "err");
     const r = await fetch("/api/today-expense", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
-      body: JSON.stringify({ amount: Number(expNom), reason: expReason }),
+      body: JSON.stringify({
+        amount: Number(expNom),
+        category: expCat,
+        detail: expCat === "Lain-lain" ? expOther.trim() : ""
+      }),
     });
     if (!r.ok) return toast.push("Gagal menambah pengeluaran", "err");
     toast.push("Pengeluaran ditambahkan");
     setExpNom("");
-    setExpReason("");
+    setExpOther("");
+    setExpCat(EXPENSE_CATEGORIES[0]);
     fetchToday();
   }
 
@@ -592,12 +759,23 @@ function App() {
                       value={expNom}
                       onChange={(e) => setExpNom(e.target.value.replace(/[^\d]/g, ""))}
                     />
-                    <input
-                      className="glass rounded-xl px-4 py-2.5 border border-white/10 outline-none w-full min-w-0"
-                      placeholder="alasan"
-                      value={expReason}
-                      onChange={(e) => setExpReason(e.target.value)}
-                    />
+                    <select
+                      className="glass rounded-xl px-4 py-2.5 border border-white/10 outline-none w-full sm:w-44 min-w-0 bg-transparent"
+                      value={expCat}
+                      onChange={(e)=>setExpCat(e.target.value)}
+                    >
+                      {EXPENSE_CATEGORIES.map((c)=>(
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </select>
+                    {expCat === "Lain-lain" && (
+                      <input
+                        className="glass rounded-xl px-4 py-2.5 border border-white/10 outline-none w-full min-w-0"
+                        placeholder="alasan lain-lain"
+                        value={expOther}
+                        onChange={(e) => setExpOther(e.target.value)}
+                      />
+                    )}
                     <button className="px-4 py-2.5 rounded-xl bg-white/20 hover:bg-white/30 whitespace-nowrap">Tambah</button>
                   </form>
                 </Card>

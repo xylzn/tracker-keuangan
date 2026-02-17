@@ -24,7 +24,9 @@ module.exports = async (req, res) => {
         expenses: list.map(x => ({
           amount: x.amount || 0,
           reason: x.reason || "",
-          ts: x.ts || ""
+          ts: x.ts || "",
+          category: x.category || "",
+          detail: x.detail || ""
         }))
       };
     });

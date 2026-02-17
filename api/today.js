@@ -32,9 +32,17 @@ module.exports = async (req, res) => {
       totalExpense: toNum(summaryTotal),
       cashStart: toNum(cashStart),
       cashEnd: toNum(cashEnd),
-      expenses: (items || []).map(([d, n, r, ts]) => ({
-        amount: toNum(n), reason: r || "", ts: ts || ""
-      })),
+      expenses: (items || []).map((r) => {
+        // support skema baru (A,B,C,D,E) dan lama (A,B,C,D)
+        if (Array.isArray(r) && r.length >= 5) {
+          const [d, n, cat, det, ts] = r;
+          const reason = det ? `${cat || ""} - ${det}` : (cat || "");
+          return { amount: toNum(n), reason, ts: ts || "", category: cat || "", detail: det || "" };
+        } else {
+          const [d, n, rsn, ts] = r;
+          return { amount: toNum(n), reason: rsn || "", ts: ts || "" };
+        }
+      }),
     });
   } catch (e) {
     console.error(e);
