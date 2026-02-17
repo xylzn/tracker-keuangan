@@ -20,6 +20,8 @@ module.exports = async (req, res) => {
         await readTodayBatch(process.env.SPREADSHEET_ID, dateStr));
     }
     await ensureCashFormulas(process.env.SPREADSHEET_ID, rowIndex);
+    ({ rowIndex, items, summaryIncome, summaryTotal, cashStart, cashEnd } =
+      await readTodayBatch(process.env.SPREADSHEET_ID, dateStr));
 
     // incomeSet TRUE hanya kalau summaryIncome ada dan bukan 0
     const parsedIncome = toNum(summaryIncome);

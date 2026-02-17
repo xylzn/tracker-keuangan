@@ -376,6 +376,54 @@ function MonthlySection() {
         <button
           onClick={()=>{
             const w = window.open("", "_blank");
+            const aggByCat = ()=>{
+              const m = new Map();
+              (data.days||[]).forEach(d=>{
+                (d.expenses||[]).forEach(e=>{
+                  const cat = e.category || inferCategory(e.reason||"");
+                  const v = Number(e.amount)||0;
+                  m.set(cat, (m.get(cat)||0)+v);
+                });
+              });
+              return Array.from(m.entries()).sort((a,b)=>b[1]-a[1]);
+            };
+            const pieSVG = (entries, size=220)=>{
+              const colors = ["#ef4444","#f59e0b","#10b981","#3b82f6","#8b5cf6","#ec4899","#14b8a6","#71717a"];
+              const total = entries.reduce((a,b)=>a+b[1],0);
+              const r = size/2; let ang = -Math.PI/2; let i=0;
+              const segs = entries.map(([lab,val])=>{
+                const a = total>0 ? (val/total)*Math.PI*2 : 0;
+                const s = ang, e = ang + a; ang = e;
+                const large = e - s > Math.PI ? 1 : 0;
+                const sx = r + r*Math.cos(s), sy = r + r*Math.sin(s);
+                const ex = r + r*Math.cos(e), ey = r + r*Math.sin(e);
+                const d = [`M ${r} ${r}`, `L ${sx} ${sy}`, `A ${r} ${r} 0 ${large} 1 ${ex} ${ey}`, "Z"].join(" ");
+                return `<path d="${d}" fill="${colors[i++%colors.length]}"></path>`;
+              }).join("");
+              return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">${total?segs:`<circle cx="${r}" cy="${r}" r="${r}" fill="#e5e7eb"></circle>`}</svg>`;
+            };
+            const donutSVG = (income, expense, size=220)=>{
+              const total = Math.max(0,income)+Math.max(0,expense);
+              const entries = [["Pendapatan", Math.max(0,income)], ["Pengeluaran", Math.max(0,expense)]];
+              const colors = ["#10b981","#ef4444"];
+              const r = size/2, inner = r*0.6; let ang=-Math.PI/2; let i=0;
+              const segs = entries.map(([lab,val])=>{
+                const a = total>0 ? (val/total)*Math.PI*2 : 0;
+                const s = ang, e = ang + a; ang = e;
+                const large = e - s > Math.PI ? 1 : 0;
+                const sx = r + r*Math.cos(s), sy = r + r*Math.sin(s);
+                const ex = r + r*Math.cos(e), ey = r + r*Math.sin(e);
+                const sx0 = r + inner*Math.cos(s), sy0 = r + inner*Math.sin(s);
+                const ex0 = r + inner*Math.cos(e), ey0 = r + inner*Math.sin(e);
+                const d = [`M ${sx0} ${sy0}`, `A ${inner} ${inner} 0 ${large} 1 ${ex0} ${ey0}`, `L ${ex} ${ey}`, `A ${r} ${r} 0 ${large} 0 ${sx} ${sy}`, "Z"].join(" ");
+                return `<path d="${d}" fill="${colors[i++%colors.length]}"></path>`;
+              }).join("");
+              const mid = total?Math.round(expense/total*100):0;
+              return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">${total?segs:`<circle cx="${r}" cy="${r}" r="${r}" fill="#e5e7eb"></circle>`}<circle cx="${r}" cy="${r}" r="${inner*0.98}" fill="white"></circle></svg><div class="small" style="text-align:center;margin-top:6px">${mid}% Pengeluaran</div>`;
+            };
+            const catEntries = aggByCat();
+            const pie = pieSVG(catEntries);
+            const donut = donutSVG(Number(data.totalIncome||0), Number(data.totalExpense||0));
             const doc = `
 <!doctype html><html><head><meta charset="utf-8"><title>Tutup Buku ${data.month}</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
@@ -407,6 +455,10 @@ tbody tr:nth-child(even){background:#fafafa}
 .footer{position:fixed;bottom:8mm;left:0;right:0;text-align:center;font-size:11px;color:#6b7280}
 .signature{display:flex;gap:24px;justify-content:flex-end;margin-top:24px}
 .sig{border-top:1px solid #d1d5db;padding-top:6px;font-size:12px;color:#374151;min-width:160px;text-align:center}
+.charts{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px}
+.legend{font-size:12px}
+.legend-row{display:flex;justify-content:space-between;align-items:center;margin:4px 0}
+.dot{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:middle}
 </style>
 </head><body>
 <div class="container">
@@ -437,6 +489,32 @@ tbody tr:nth-child(even){background:#fafafa}
       <div class="small">${data.topExpense.date} ${data.topExpense.ts}</div>
     </div>
   </section>` : ``}
+
+  <section class="section break-avoid">
+    <div class="charts">
+      <div>
+        <div class="small" style="margin-bottom:6px">Distribusi Pengeluaran</div>
+        ${pie}
+        <div class="legend">
+          ${catEntries.slice(0,8).map(([label,val],i)=>{
+            const colors=["#ef4444","#f59e0b","#10b981","#3b82f6","#8b5cf6","#ec4899","#14b8a6","#71717a"];
+            const color=colors[i%colors.length];
+            const total = catEntries.reduce((a,b)=>a+b[1],0);
+            const pct = total?Math.round(val/total*100):0;
+            return `<div class="legend-row"><div><span class="dot" style="background:${color}"></span>${label}</div><div>${new Intl.NumberFormat("id-ID",{style:"currency",currency:"IDR",maximumFractionDigits:0}).format(val)} <span class="small" style="color:#6b7280">(${pct}%)</span></div></div>`;
+          }).join("")}
+        </div>
+      </div>
+      <div>
+        <div class="small" style="margin-bottom:6px">Pendapatan vs Pengeluaran</div>
+        ${donut}
+        <div class="legend" style="margin-top:6px">
+          <div class="legend-row"><div><span class="dot" style="background:#10b981"></span>Pendapatan</div><div>${new Intl.NumberFormat("id-ID",{style:"currency",currency:"IDR",maximumFractionDigits:0}).format(Number(data.totalIncome||0))}</div></div>
+          <div class="legend-row"><div><span class="dot" style="background:#ef4444"></span>Pengeluaran</div><div>${new Intl.NumberFormat("id-ID",{style:"currency",currency:"IDR",maximumFractionDigits:0}).format(Number(data.totalExpense||0))}</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
 
   <section class="section">
     <table>
