@@ -23,20 +23,8 @@ module.exports = async (req, res) => {
     ({ rowIndex, items, summaryIncome, summaryTotal, cashStart, cashEnd, summaryRows } =
       await readTodayBatch(process.env.SPREADSHEET_ID, dateStr));
 
-    // fallback kalkulasi tabungan jika belum terhitung (mis. delay evaluasi formula)
-    let cashEndFinal = toNum(cashEnd);
-    if (!Number.isFinite(cashEndFinal) || cashEndFinal === 0) {
-      let prevG = 0;
-      if (Array.isArray(summaryRows) && summaryRows.length) {
-        // summaryRows mulai dari A2 => index baris hari ini adalah rowIndex-2
-        const todayIdx = Math.max(0, rowIndex - 2);
-        for (let i = todayIdx - 1; i >= 0; i--) {
-          const g = toNum(summaryRows[i]?.[6]);
-          if (!Number.isNaN(g)) { prevG = g; break; }
-        }
-      }
-      cashEndFinal = toNum(prevG) + toNum(summaryIncome) - toNum(summaryTotal);
-    }
+    // Tabungan = Netto (income - total) sesuai permintaan
+    const cashEndFinal = toNum(summaryIncome) - toNum(summaryTotal);
     // persist nilai ke G agar konsisten untuk laporan lain
     await setCashFGValue(process.env.SPREADSHEET_ID, rowIndex, cashEndFinal);
 

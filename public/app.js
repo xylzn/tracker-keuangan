@@ -143,27 +143,27 @@ const KPI = ({ title, value, sub, accent }) => (
 );
 
 const EXPENSE_CATEGORIES = [
-  "Roko",
+  "Beli Roko",
   "Bensin",
-  "Paket",
-  "Makan",
-  "Minum",
-  "Jajan",
-  "Lain-lain",
+  "Beli Paket",
+  "Beli Makan",
+  "Beli Minum",
+  "Beli Jajan",
+  "Lain Lain",
 ];
 
 function inferCategory(reason) {
-  if (!reason) return "Lain-lain";
+  if (!reason) return "Lain Lain";
   const s = String(reason).toLowerCase();
-  if (/^lain-lain/.test(s)) return "Lain-lain";
-  if (/\brok|rokok|roko\b/.test(s)) return "Roko";
+  if (/^lain-lain/.test(s)) return "Lain Lain";
+  if (/\brok|rokok|roko\b/.test(s)) return "Beli Roko";
   if (/\bbensin|bbm|fuel\b/.test(s)) return "Bensin";
-  if (/\bpaket|kurir|ongkir\b/.test(s)) return "Paket";
-  if (/\bmakan|mkn|food\b/.test(s)) return "Makan";
-  if (/\bminum|drink|air|kopi|teh\b/.test(s)) return "Minum";
+  if (/\bpaket|kurir|ongkir\b/.test(s)) return "Beli Paket";
+  if (/\bmakan|mkn|food\b/.test(s)) return "Beli Makan";
+  if (/\bminum|drink|air|kopi|teh\b/.test(s)) return "Beli Minum";
   if (/\bjajan|snack|cemilan|camilan\b/.test(s)) return "Jajan";
   const exact = EXPENSE_CATEGORIES.find(c => c.toLowerCase() === s.trim());
-  return exact || "Lain-lain";
+  return exact || "Lain Lain";
 }
 
 function PieChart({ data, size = 180, donut = false, centerText }) {
